@@ -128,10 +128,9 @@ def NormalizeLogMel(wav_name, mel, mean, std):
     return wav_name, mel
 
 def TextCheck(wavs, cfg):
-    
-    wav_files = [i.split('_mic1')[0] for i in wavs]
-    
+    wav_files = [i.split('.wav')[0] for i in wavs]
     txt_path  = glob(f'{cfg.txt_path}/*/*')
+    
     txt_files = [os.path.basename(i).split('.txt')[0] for i in txt_path]
     
     revised_wavs = []
@@ -176,7 +175,7 @@ def SplitDataset(all_spks, cfg):
     test_wavs_names  = []
     
     for spk in train_spks:
-        spk_wavs       = glob(f'{cfg.data_path}/{spk}/*mic1*')
+        spk_wavs       = glob(f'{cfg.data_path}/p{spk}/*')
         spk_wavs_names = [os.path.basename(p).split('.')[0] for p in spk_wavs]
         valid_names    = random.sample(spk_wavs_names, int(len(spk_wavs_names) * cfg.s2s_portion))
         train_names    = [n for n in spk_wavs_names if n not in valid_names]
@@ -188,16 +187,16 @@ def SplitDataset(all_spks, cfg):
         test_wavs_names  += test_names
 
     for spk in valid_spks:
-        spk_wavs         = glob(f'{cfg.data_path}/{spk}/*mic1*')
+        spk_wavs         = glob(f'{cfg.data_path}/p{spk}/*')
         spk_wavs_names   = [os.path.basename(p).split('.')[0] for p in spk_wavs]
         valid_wavs_names += spk_wavs_names
 
     for spk in test_spks:
-        spk_wavs        = glob(f'{cfg.data_path}/{spk}/*mic1*')
+        spk_wavs        = glob(f'{cfg.data_path}/p{spk}/*')
         spk_wavs_names  = [os.path.basename(p).split('.')[0] for p in spk_wavs]
         test_wavs_names += spk_wavs_names
-    
-    all_wavs         = glob(f'{cfg.data_path}/*/*mic1.flac')
+
+    all_wavs         = glob(f'{cfg.data_path}/*/*.wav')
     train_wavs_names = TextCheck(train_wavs_names, cfg) # delete the wavs which don't have text files
     valid_wavs_names = TextCheck(valid_wavs_names, cfg)
     test_wavs_names  = TextCheck(test_wavs_names, cfg)
@@ -321,7 +320,7 @@ def ExtractMelstats(wn2info, train_wavs_names, cfg):
 def SaveFeatures(wav_name, info, mode, cfg):
     
     mel, lf0, mel_len, speaker = info
-    wav_path      = f'{cfg.data_path}/{speaker}/{wav_name}.flac' # can change to special char *
+    wav_path      = f'{cfg.data_path}/{speaker}/{wav_name}.wav' # can change to special char *
     mel_save_path = f'{cfg.output_path}/{mode}/mels/{speaker}/{wav_name}.npy'
     lf0_save_path = f'{cfg.output_path}/{mode}/lf0/{speaker}/{wav_name}.npy'
     
@@ -330,7 +329,7 @@ def SaveFeatures(wav_name, info, mode, cfg):
     np.save(mel_save_path, mel)
     np.save(lf0_save_path, lf0)
     
-    wav_name = wav_name.split('_mic')[0] # p231_001
+    wav_name = wav_name.split('.wav')[0] # p231_001
 
     return {'mel_len':mel_len, 'speaker':speaker, 'wav_name':wav_name, 'wav_path':wav_path, 'mel_path':mel_save_path, 'lf0_path':lf0_save_path}
     

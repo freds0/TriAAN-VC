@@ -87,7 +87,7 @@ class ConversionDataset(Dataset):
         self.data_path = Path(cfg.data_path)
         self.speakers  = sorted(os.listdir(self.data_path/f'{mode}/mels'))
         
-        metadata       = Read_json(self.data_path/f'{mode}_pair.json')
+        metadata       = Read_json(self.data_path/f'{mode}.json')
         self.metadata  = metadata['s2s_st'] + metadata['s2s_ut'] + metadata['u2u_st'] + metadata['u2u_ut']
         mel_stats = np.load(cfg.data_path + '/mel_stats.npy')
         self.mean = np.expand_dims(mel_stats[0], -1)

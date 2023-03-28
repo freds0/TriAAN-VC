@@ -1,7 +1,7 @@
 data_path:       ./base_data
-wav_path:        ./vctk/wav48_silence_trimmed
-txt_path:        ./vctk/txt
-spk_info_path:   ./vctk/speaker-info.txt
+wav_path:        ./VCTK-Corpus/wav48
+txt_path:        ./VCTK-Corpus/txt
+spk_info_path:   ./VCTK-Corpus/speaker-info.txt
 converted_path: 
 vocoder_path:    ./vocoder
 cpc_path:        ./cpc

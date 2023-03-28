@@ -1,6 +1,6 @@
-data_path:     ./vctk/wav48_silence_trimmed
-txt_path:      ./vctk/txt
-spk_info_path: ./vctk/speaker-info.txt
+data_path:     ./VCTK-Corpus/wav48/
+txt_path:      ./VCTK-Corpus/txt
+spk_info_path: ./VCTK-Corpus/speaker-info.txt
 output_path:   ./base_data
 cpc_path:      ./cpc
 sampling_rate: 16000
