@@ -21,7 +21,7 @@ class Tester:
         self.criterion    = self._select_loss().to(cfg.device)
 
         self.mel_stats    = np.load(f'{cfg.data_path}/mel_stats.npy')
-        self.val_dataset  = ConversionDataset(cfg, 'valid')
+        self.val_dataset  = ConversionDataset(cfg, 'val')
         self.val_loader   = DataLoader(self.val_dataset, batch_size=1, shuffle=False, num_workers=4)
         if cfg.n_uttr > 1:
             self.test_dataset = MultiConversionDataset(cfg, 'test')

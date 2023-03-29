@@ -1,7 +1,7 @@
 data_path:       ./base_data
-wav_path:        ./VCTK-Corpus/wav48
-txt_path:        ./VCTK-Corpus/txt
-spk_info_path:   ./VCTK-Corpus/speaker-info.txt
+wav_path:        ./input/train/
+txt_path:        ./input/train
+spk_info_path:   ./input/
 converted_path: 
 vocoder_path:    ./vocoder
 cpc_path:        ./cpc
@@ -35,11 +35,11 @@ model:
 
 train:
   epoch:        500
-  batch_size:   64
+  batch_size:   2
   lr:           1e-4
   loss:         l1
-  eval_every:   100
-  save_epoch:   100
+  eval_every:   1
+  save_epoch:   1
   siam:         true
   cpc:          true
 

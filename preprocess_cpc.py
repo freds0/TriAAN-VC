@@ -34,7 +34,7 @@ def main(cfg):
     cpc       = load_cpc(f'{cfg.cpc_path}/cpc.pt').cuda()
     cpc.eval()
     with torch.no_grad():
-        modes = ['train', 'valid', 'test']
+        modes = ['train', 'val', 'test']
         for mode in modes:
             metadata = Read_json(data_path/f'{mode}.json')
 

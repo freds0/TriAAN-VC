@@ -11,6 +11,8 @@ warnings.filterwarnings(action='ignore')
 
 import os
 from os.path import join as opj
+from os import listdir
+
 import json
 import random
 import numpy as np
@@ -21,6 +23,7 @@ from glob import glob
 from tqdm import tqdm
 import resampy
 import pyworld as pw
+import hashlib
 
 from preprocess.spectrogram import logmelspectrogram
 
@@ -30,7 +33,8 @@ def ProcessingTrainData(path, cfg):
         For multiprocess function binding load wav and log-mel 
     """
     wav_name = os.path.basename(path).split('.')[0]
-    speaker  = wav_name.split('_')[0]
+    #speaker  = wav_name.split('_')[0]
+    speaker = os.path.dirname(path).split('/')[-1]
     sr       = cfg.sampling_rate
     wav, fs  = sf.read(path)
     wav, _   = librosa.effects.trim(y=wav, top_db=cfg.top_db) # trim slience
@@ -140,68 +144,54 @@ def TextCheck(wavs, cfg):
             
     return revised_wavs
 
-def GetSpeakerInfo(cfg):
-    
-    spk_info = open(cfg.spk_info_path, 'r')
-    gen2spk  = {}
-    all_spks = []
-    for i, line in enumerate(spk_info):
-        if i == 0:
-            continue
-        else:
-            tmp = line.split()
-            spk = tmp[0]
-            all_spks.append(spk)
-            gen = tmp[2]
-            if gen not in gen2spk:
-                gen2spk[gen] = [spk]
-            else:
-                gen2spk[gen].append(spk)    
-    
-    print(f'Total speaker: {len(all_spks)} with Female: {len(gen2spk["F"])} and Male: {len(gen2spk["M"])}')
-    
-    return all_spks, gen2spk
+def GetHash(string):
+    return hashlib.sha1(string.encode()).hexdigest()[:4]
 
-def SplitDataset(all_spks, cfg):
+
+def GetSpeakers(folder_path):
+    all_spks = []
+    for folder in listdir(folder_path):
+            all_spks.append(folder)
+
+    return all_spks
+
+
+def SplitDataset(cfg):
     
-    all_spks = sorted(all_spks)
-    random.shuffle(all_spks)
-    train_spks = all_spks[:-cfg.eval_spks * 2] # except valid and test unseen speakers
-    valid_spks = all_spks[-cfg.eval_spks * 2:-cfg.eval_spks]
-    test_spks  = all_spks[-cfg.eval_spks:]
+    #all_spks = sorted(all_spks)
+    #random.shuffle(all_spks)
+    train_spks = GetSpeakers(os.path.join(cfg.spk_info_path, 'train'))
+    print(f"Total {len(train_spks)} speakers in train set.")
+    valid_spks = GetSpeakers(os.path.join(cfg.spk_info_path, 'val'))
+    print(f"Total {len(valid_spks)} speakers in valid set.")
+    test_spks  = GetSpeakers(os.path.join(cfg.spk_info_path, 'test'))
+    print(f"Total {len(test_spks)} speakers in test set.")
 
     train_wavs_names = []
     valid_wavs_names = []
     test_wavs_names  = []
     
     for spk in train_spks:
-        spk_wavs       = glob(f'{cfg.data_path}/p{spk}/*')
+        spk_wavs       = glob(f'{cfg.data_path}/train/{spk}/*')
         spk_wavs_names = [os.path.basename(p).split('.')[0] for p in spk_wavs]
-        valid_names    = random.sample(spk_wavs_names, int(len(spk_wavs_names) * cfg.s2s_portion))
-        train_names    = [n for n in spk_wavs_names if n not in valid_names]
-        test_names     = random.sample(train_names, int(len(spk_wavs_names) * cfg.s2s_portion))
-        train_names    = [n for n in train_names if n not in test_names]
-
-        train_wavs_names += train_names
-        valid_wavs_names += valid_names
-        test_wavs_names  += test_names
+        train_wavs_names += spk_wavs_names
 
     for spk in valid_spks:
-        spk_wavs         = glob(f'{cfg.data_path}/p{spk}/*')
+        spk_wavs         = glob(f'{cfg.data_path}/val/{spk}/*')
         spk_wavs_names   = [os.path.basename(p).split('.')[0] for p in spk_wavs]
         valid_wavs_names += spk_wavs_names
 
     for spk in test_spks:
-        spk_wavs        = glob(f'{cfg.data_path}/p{spk}/*')
+        spk_wavs        = glob(f'{cfg.data_path}/test/{spk}/*')
         spk_wavs_names  = [os.path.basename(p).split('.')[0] for p in spk_wavs]
         test_wavs_names += spk_wavs_names
-
-    all_wavs         = glob(f'{cfg.data_path}/*/*.wav')
-    train_wavs_names = TextCheck(train_wavs_names, cfg) # delete the wavs which don't have text files
-    valid_wavs_names = TextCheck(valid_wavs_names, cfg)
-    test_wavs_names  = TextCheck(test_wavs_names, cfg)
     
-    print(f'Total files: {len(all_wavs)}, Train: {len(train_wavs_names)}, Valid: {len(valid_wavs_names)}, Test: {len(test_wavs_names)}, Del Files: {len(all_wavs)-len(train_wavs_names)-len(valid_wavs_names)-len(test_wavs_names)}')
+    all_wavs         = glob(f'{cfg.data_path}/*/*/*.wav')
+    #train_wavs_names = TextCheck(train_wavs_names, cfg) # delete the wavs which don't have text files
+    #valid_wavs_names = TextCheck(valid_wavs_names, cfg)
+    #test_wavs_names  = TextCheck(test_wavs_names, cfg)
+    
+    print(f'Total files: {len(all_wavs)}, Train: {len(train_wavs_names)}, Val: {len(valid_wavs_names)}, Test: {len(test_wavs_names)}, Del Files: {len(all_wavs)-len(train_wavs_names)-len(valid_wavs_names)-len(test_wavs_names)}')
     
     return all_wavs, train_wavs_names, valid_wavs_names, test_wavs_names
 
@@ -211,10 +201,10 @@ def GetMetaResults(train_results, valid_results, test_results, cfg):
     """
 
     for i in range(len(train_results)):
-        
+        '''
         spk      = train_results[i]['speaker']  # p225
         wav_name = train_results[i]['wav_name'] # p225_001
-        txt_path = f'{cfg.txt_path}/{spk}/{wav_name}.txt' 
+        #txt_path = f'{cfg.txt_path}/{spk}/{wav_name}.txt' 
         
         file    = open(txt_path)
         scripts = file.readline()
@@ -222,10 +212,11 @@ def GetMetaResults(train_results, valid_results, test_results, cfg):
        
         train_results[i]['text']      = scripts
         train_results[i]['text_path'] = txt_path
+        '''
         train_results[i]['test_type'] = 'train'
         
     for i in range(len(valid_results)):
-        
+        '''
         spk      = valid_results[i]['speaker']  # p225
         wav_name = valid_results[i]['wav_name'] # p225_001
         txt_path = f'{cfg.txt_path}/{spk}/{wav_name}.txt' 
@@ -249,15 +240,15 @@ def GetMetaResults(train_results, valid_results, test_results, cfg):
        
         test_results[i]['text']      = scripts
         test_results[i]['text_path'] = txt_path
-
+    '''
         
     train_spk = set([i['speaker'] for i in train_results])
     valid_spk = set([i['speaker'] for i in valid_results])
     test_spk  = set([i['speaker'] for i in test_results])
 
-    train_txt = set([i['text'] for i in train_results])
-    valid_txt = set([i['text'] for i in valid_results])
-    test_txt  = set([i['text'] for i in test_results])
+    #train_txt = set([i['text'] for i in train_results])
+    #valid_txt = set([i['text'] for i in valid_results])
+    #test_txt  = set([i['text'] for i in test_results])
 
     valid_s2s_spk = train_spk.intersection(valid_spk) 
     valid_u2u_spk = valid_spk.difference(train_spk).difference(test_spk)
@@ -265,41 +256,31 @@ def GetMetaResults(train_results, valid_results, test_results, cfg):
     test_s2s_spk  = train_spk.intersection(test_spk)
     test_u2u_spk  = test_spk.difference(train_spk).difference(valid_spk)
 
-    valid_s2s_txt = train_txt.intersection(valid_txt) 
-    valid_u2u_txt = valid_txt.difference(train_txt).difference(test_txt)
+    #valid_s2s_txt = train_txt.intersection(valid_txt) 
+    #valid_u2u_txt = valid_txt.difference(train_txt).difference(test_txt)
 
-    test_s2s_txt  = train_txt.intersection(test_txt)
-    test_u2u_txt  = test_txt.difference(train_txt).difference(valid_txt)
-    
+    #test_s2s_txt  = train_txt.intersection(test_txt)
+    #test_u2u_txt  = test_txt.difference(train_txt).difference(valid_txt)
+
     for i in range(len(valid_results)):
         
-        spk, txt = valid_results[i]['speaker'], valid_results[i]['text']
+        spk = valid_results[i]['speaker']
         if spk in valid_s2s_spk:
-            if txt in valid_s2s_txt:
-                valid_results[i]['test_type'] = 's2s_st'
-            else:
-                valid_results[i]['test_type'] = 's2s_ut'
+            valid_results[i]['test_type'] = 's2s_st'
         else:
-            if txt in valid_s2s_txt:
-                valid_results[i]['test_type'] = 'u2u_st'
-            else:
-                valid_results[i]['test_type'] = 'u2u_ut'
+            valid_results[i]['test_type'] = 'u2u_st'
 
     for i in range(len(test_results)):
         
-        spk, txt = test_results[i]['speaker'], test_results[i]['text']
+        spk = test_results[i]['speaker']
         if spk in test_s2s_spk:
-            if txt in test_s2s_txt:
-                test_results[i]['test_type'] = 's2s_st'
-            else:
-                test_results[i]['test_type'] = 's2s_ut'
+            test_results[i]['test_type'] = 's2s_st'
+
         else:
-            if txt in test_s2s_txt:
-                test_results[i]['test_type'] = 'u2u_st'
-            else:
-                test_results[i]['test_type'] = 'u2u_ut'
-                
+            test_results[i]['test_type'] = 'u2u_st'
+
     return train_results, valid_results, test_results
+
 
 def ExtractMelstats(wn2info, train_wavs_names, cfg):
     
@@ -320,9 +301,9 @@ def ExtractMelstats(wn2info, train_wavs_names, cfg):
 def SaveFeatures(wav_name, info, mode, cfg):
     
     mel, lf0, mel_len, speaker = info
-    wav_path      = f'{cfg.data_path}/{speaker}/{wav_name}.wav' # can change to special char *
-    mel_save_path = f'{cfg.output_path}/{mode}/mels/{speaker}/{wav_name}.npy'
-    lf0_save_path = f'{cfg.output_path}/{mode}/lf0/{speaker}/{wav_name}.npy'
+    wav_path      = os.path.join(cfg.data_path, mode, speaker, f'{wav_name}.wav') # can change to special char *
+    mel_save_path = os.path.join(cfg.output_path, mode, 'mels', speaker, f'{wav_name}.npy')
+    lf0_save_path = os.path.join(cfg.output_path, mode, 'lf0', speaker, f'{wav_name}.npy')                              
     
     os.makedirs(os.path.dirname(mel_save_path), exist_ok=True)
     os.makedirs(os.path.dirname(lf0_save_path), exist_ok=True)

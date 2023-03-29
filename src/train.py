@@ -28,7 +28,7 @@ class Trainer:
         self.augment   = Augment()
         
         self.train_loader = data['train']
-        self.val_loader   = data['valid']
+        self.val_loader   = data['val']
 
         self.tester = Tester(cfg)
 
@@ -45,10 +45,10 @@ class Trainer:
             
         # checkpoint
         if cfg.resume:
-            self._resume_checkpoint()
+            self._resume_checkpoint(cfg.resume)
             
-    def _resume_checkpoint(self):
-        checkpoint = torch.load(f'{self.cfg.checkpoint}/model-last.pth', map_location=self.cfg.device)
+    def _resume_checkpoint(self, checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, map_location=self.cfg.device)
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer']) 
         print('---load previous weigths and optimizer for resume training---')
@@ -98,8 +98,8 @@ class Trainer:
                 neptune.log_metric('train loss', train_loss)
                 neptune.log_metric('valid loss', val_loss)
                 
-            if epoch % self.cfg.train.eval_every == 0:
-                self.tester.test(set_type='valid')
+            #if epoch % self.cfg.train.eval_every == 0:
+            #    self.tester.test(set_type='val')
                 
     def _run_epoch(self, data_loader, valid=False):
         

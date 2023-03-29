@@ -28,19 +28,19 @@ def main(cfg):
         
         train_dataset = TrainDataset(cfg, 'train')
         train_loader  = DataLoader(train_dataset, batch_size=cfg.train.batch_size, shuffle=True, num_workers=cfg.num_worker) 
-        val_dataset   = TrainDataset(cfg, 'valid')
+        val_dataset   = TrainDataset(cfg, 'val')
         val_loader    = DataLoader(val_dataset, batch_size=cfg.train.batch_size, shuffle=False, num_workers=cfg.num_worker)
         
-        data_loader   = {'train':train_loader, 'valid':val_loader}
+        data_loader   = {'train':train_loader, 'val':val_loader}
         
         trainer = Trainer(data_loader, cfg)
         trainer.train()
-        
+        '''
         print('--- Test Phase ---')
         seed_init(seed=cfg.seed)
         tester = Tester(cfg)
         tester.test(set_type='test')
-
+        '''
         if cfg.logging:
             neptune.stop()
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=1234, help='seed number')
     parser.add_argument('--device', type=str, default='cuda:0', help='Cuda device')
     parser.add_argument('--logging', type=bool, default=False, help='Logging option')
-    parser.add_argument('--resume', type=bool, default=False, help='Resume option')
+    parser.add_argument('--resume', type=str, default=None, help='Resume option')
     parser.add_argument('--checkpoint', type=str, default='./checkpoints', help='Results save path')
     parser.add_argument('--model_name', type=str, default='model-best.pth', help='Best model name')
     parser.add_argument('--n_uttr', type=int, default=1, help='Number of target utterances') # default:1 for a fair comparison

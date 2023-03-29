@@ -1,6 +1,6 @@
-data_path:     ./VCTK-Corpus/wav48/
-txt_path:      ./VCTK-Corpus/txt
-spk_info_path: ./VCTK-Corpus/speaker-info.txt
+data_path:     ./input/
+txt_path:      ./input/
+spk_info_path: ./input/
 output_path:   ./base_data
 cpc_path:      ./cpc
 sampling_rate: 16000
