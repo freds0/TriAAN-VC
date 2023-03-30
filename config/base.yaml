@@ -1,6 +1,6 @@
 data_path:       ./base_data
-wav_path:        ./input/train/
-txt_path:        ./input/train
+train_folder:    train/
+test_folder:     test
 spk_info_path:   ./input/
 converted_path: 
 vocoder_path:    ./vocoder

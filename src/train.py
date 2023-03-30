@@ -104,6 +104,7 @@ class Trainer:
     def _run_epoch(self, data_loader, valid=False):
         
         total_loss = 0 
+        i = 0
         for i, batch in enumerate(tqdm(data_loader)):
             
             src_feat = batch['feat'].to(self.cfg.device)

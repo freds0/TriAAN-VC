@@ -1,6 +1,6 @@
 data_path:     ./input/
-txt_path:      ./input/
-spk_info_path: ./input/
+train_folder:  train/
+test_folder:   test
 output_path:   ./base_data
 cpc_path:      ./cpc
 sampling_rate: 16000
